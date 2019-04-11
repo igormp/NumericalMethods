@@ -1,3 +1,6 @@
+import sympy
+
+
 class ODE:
 
     moultonCoeff = [[1, 0, 0, 0, 0, 0, 0, 0],
@@ -22,37 +25,118 @@ class ODE:
         self.y = y
         self.t = t
         self.h = h
-        self.steps = steps
         self.func = func
         self.order = order
 
     def euler(self):
-    return self.y + self.h * self.func(self.t, self.y)
+    	return self.y + self.h * self.func(self.t, self.y)
 
     def backward_euler(self):
-    y1 = euler(self.y, self.t, self.h, self.steps, self.func)
-    return self.y + self.h * self.func(self.t + self.h, y1)
+	    y1 = euler(self.y, self.t, self.h, self.steps, self.func)
+	    return self.y + self.h * self.func(self.t + self.h, y1)
 
     def modified_euler(self):
-    y1 = euler(self.y, self.t, self.h, self.steps, self.func)
-    return self.y + (self.h / 2) * (self.func(self.t, self.y) + self.func(self.t + self.h, y1))
+	    y1 = euler(self.y, self.t, self.h, self.steps, self.func)
+	    return self.y + (self.h / 2) * (self.func(self.t, self.y) + self.func(self.t + self.h, y1))
 
     def runge_kutta(self):
-    k1 = self.func(self.t, self.y)
-    k2 = self.func(self.t + self.h / 2, self.y + k1 * self.h / 2)
-    k3 = self.func(self.t + self.h / 2, self.y + k2 * self.h / 2)
-    k4 = k2 = self.func(self.t + self.h, self.y + k3 * self.h)
-    return self.y + (k1 + 2 * k2 + 2 * k3 + k4) * self.h / 6
+	    k1 = self.func(self.t, self.y)
+	    k2 = self.func(self.t + self.h / 2, self.y + k1 * self.h / 2)
+	    k3 = self.func(self.t + self.h / 2, self.y + k2 * self.h / 2)
+	    k4 = k2 = self.func(self.t + self.h, self.y + k3 * self.h)
+	    return self.y + (k1 + 2 * k2 + 2 * k3 + k4) * self.h / 6
 
-    # def adam_bashforth(self):
-#	return y + h*func
+    def adam_bashforth(self):
+        return self.bashforthCoeff[self.order][i] * self.func(self.t, self.y) * self.h
 
-    # def adam_multon(self):
-#	return y + h*func
+    def adam_multon(self):
+        return self.moultonCoeff[self.order][i] * self.func(self.t, self.y) * self.h
+
+
+class Solver:
+
+	x_axis = []
+	y_axis = []
+
+	def __init__(self, method, steps, ode):
+		self.method = method
+		self.steps = steps
+		self.ode = ode
+
+	def solve(self)
+		if self.method == "euler":
+			pass
+		elif self.method == "euler_inverso":
+			pass
+		elif self.method == "euler_aprimorado":
+			pass
+		elif self.method == "runge_kutta":
+			pass
+		elif self.method == "adam_bashforth":
+			pass
+		elif self.method == "adam_bashforth_by_euler":
+			pass
+		elif self.method == "adam_bashforth_by_euler_inverso":
+			pass
+		elif self.method == "adam_bashforth_by_euler_aprimorado":
+			pass
+		elif self.method == "adam_bashforth_by_runge_kutta":
+			pass
+		elif self.method == "adam_multon":
+			pass
+		elif self.method == "adam_multon_by_euler":
+			pass
+		elif self.method == "adam_multon_by_euler_inverso":
+			pass
+		elif self.method == "adam_multon_by_euler_aprimorado":
+			pass
+		elif self.method == "adam_multon_by_runge_kutta":
+			pass
+		elif self.method == "formula_inversa":
+			pass
+		elif self.method == "formula_inversa_by_euler":
+			pass
+		elif self.method == "formula_inversa_by_euler_inverso":
+			pass
+		elif self.method == "formula_inversa_by_euler_aprimorado":
+			pass
+		elif self.method == "formula_inversa_by_runge_kutta":
+			pass
+
+		def euler(self):
+			points = []
+			points.append(ode.t, ode.y)
+			for i in range(steps):
+				ode.y = ode.euler
+				points.append(ode.t, )
+				ode.t += h
+				ode.y =
 
 
 def main():
-    # Lendo o arquivo de entrada
+
+	# Defining equation symbols
+	t, y = sympy.symbols("t y")
+
+    # Reading input file
     inFile = open("entrada.txt", "r")
     outFile = open("saida.txt", "w")
     lines = read.readlines()
+
+    for line in lines:
+        words = line.split()
+
+        method = words[0]
+        y0 = float(words[1])
+        t0 = float(words[2])
+        h = float(words[3])
+        steps = int(words[4])
+        # Converts the function string into a lambda function
+        f = sympy.lambdify([t,y], sympy.sympify(words[5]), "math")
+        if len(words) > 6:
+        	order = int(words[6])
+        	problem = ODE(y0, t0, h, f, order)
+        else:
+        	problem = ODE(y0, t0, h, f)
+
+        calc = Solver(method, steps, problem)
