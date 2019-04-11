@@ -50,12 +50,9 @@ class ODE:
     def adam_bashforth(self, i):
         t_aux = []
         y = 0
-        aux = self.order -1
-        for x in range(self.order):
-            t_aux.append(self.t -self.h*aux)
-            aux = aux -1
+        #y = self.h * sum([self.bashforthCoeff[self.order-1][j] * self.func(t_aux[j], self.y[i]) for j in range(self.order)])
         for j in range(self.order):
-            y+= self.bashforthCoeff[self.order-1][j] * self.func(t_aux[i], float(self.y[i])) * self.h
+            y+= self.bashforthCoeff[self.order-1][j] * self.func(self.t[len(self.t)-self.order + j], self.y[len(self.y)-self.order + j]) * self.h
         return y
 
     def adam_multon(self):
@@ -101,12 +98,11 @@ class Solver:
             return self.points
         elif self.method == "adam_bashforth":
             for i in range(self.ode.order):
-                self.points.append((self.ode.t, self.ode.y[i]))
-                self.ode.t += self.ode.h
+                self.points.append((self.ode.t[i], self.ode.y[i]))
             for i in range(self.ode.order-1, self.steps):
-                self.ode.y = self.ode.adam_bashforth(i)
-                self.ode.t += self.ode.h
-                self.points.append((self.ode.t, self.ode.y))
+                self.ode.y.append(self.ode.adam_bashforth(i))
+                self.ode.t.append(self.ode.t[i] + self.ode.h)
+                self.points.append((self.ode.t[i], self.ode.y[i]))
             return self.points
         elif self.method == "adam_bashforth_by_euler":
             pass
@@ -159,10 +155,13 @@ if __name__ == "__main__":
             steps = int(words[-3])
             h = float(words[-4])
             t0 = float(words[-5])
+            ts = []
+            ts.append(t0)
             ys = []
             for i in range(order):
-                ys.append(words[i+1])
-            problem = ODE(ys, t0, h, f, order)
+                ys.append(float(words[i+1]))
+                ts.append(ts[i] + h)
+            problem = ODE(ys, ts, h, f, order)
         else:
             y0 = float(words[1])
             t0 = float(words[2])
