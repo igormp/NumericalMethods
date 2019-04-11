@@ -33,21 +33,21 @@ class ODE:
         return self.y + self.h * self.func(self.t, self.y)
 
     def backward_euler(self):
-        y1 = euler(self.y, self.t, self.h, self.steps, self.func)
+        y1 = self.euler()
         return self.y + self.h * self.func(self.t + self.h, y1)
 
     def modified_euler(self):
-        y1 = euler(self.y, self.t, self.h, self.steps, self.func)
+        y1 = self.euler()
         return self.y + (self.h / 2) * (self.func(self.t, self.y) + self.func(self.t + self.h, y1))
 
     def runge_kutta(self):
         k1 = self.func(self.t, self.y)
         k2 = self.func(self.t + self.h / 2, self.y + k1 * self.h / 2)
         k3 = self.func(self.t + self.h / 2, self.y + k2 * self.h / 2)
-        k4 = k2 = self.func(self.t + self.h, self.y + k3 * self.h)
+        k4 = self.func(self.t + self.h, self.y + k3 * self.h)
         return self.y + (k1 + 2 * k2 + 2 * k3 + k4) * self.h / 6
 
-    def adam_bashforth(self):
+    def adam_bashforth(self, i):
         return self.bashforthCoeff[self.order][i] * self.func(self.t, self.y) * self.h
 
     def adam_multon(self):
@@ -60,27 +60,46 @@ class Solver:
         self.method = method
         self.steps = steps
         self.ode = ode
-
-    def euler(self):
-        points = []
-        points.append((self.ode.t, self.ode.y))
-        for i in range(self.steps):
-            self.ode.y = self.ode.euler()
-            self.ode.t += self.ode.h
-            points.append((self.ode.t, self.ode.y))
-        return points
+        self.points = []
 
     def solve(self):
         if self.method == "euler":
-            return self.euler()
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.steps):
+                self.ode.y = self.ode.euler()
+                self.ode.t += self.ode.h
+                self.points.append((self.ode.t, self.ode.y))
+            return self.points
         elif self.method == "euler_inverso":
-            pass
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.steps):
+                self.ode.y = self.ode.backward_euler()
+                self.ode.t += self.ode.h
+                self.points.append((self.ode.t, self.ode.y))
+            return self.points
         elif self.method == "euler_aprimorado":
-            pass
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.steps):
+                self.ode.y = self.ode.modified_euler()
+                self.ode.t += self.ode.h
+                self.points.append((self.ode.t, self.ode.y))
+            return self.points
         elif self.method == "runge_kutta":
-            pass
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.steps):
+                self.ode.y = self.ode.runge_kutta()
+                self.ode.t += self.ode.h
+                self.points.append((self.ode.t, self.ode.y))
+            return self.points
         elif self.method == "adam_bashforth":
-            pass
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.steps):
+                for j in range(self.order):
+                    y+= self.ode.adam_bashforth(j)
+                self.ode.y = y
+                self.ode.t += self.ode.h
+                self.points.append((self.ode.t, self.ode.y))
+            return self.points
         elif self.method == "adam_bashforth_by_euler":
             pass
         elif self.method == "adam_bashforth_by_euler_inverso":
@@ -138,7 +157,7 @@ if __name__ == "__main__":
             problem = ODE(y0, t0, h, f)
 
         calc = Solver(method, steps, problem)
-
+        print(method)
         points = calc.solve()
         for i in range(len(points)):
             print(i, " ", points[i][1])
