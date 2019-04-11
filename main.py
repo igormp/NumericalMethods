@@ -131,7 +131,7 @@ class Solver:
             self.ode.t = ts
             self.ode.y = ys
             for i in range(self.ode.order, self.steps + 1):
-                self.ode.y.append(self.ode.adam_bashforth(i - 1))
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.adam_bashforth(i - 1))
                 self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
                 self.points.append((self.ode.t[i], self.ode.y[i]))
             return self.points
@@ -151,7 +151,7 @@ class Solver:
             self.ode.t = ts
             self.ode.y = ys
             for i in range(self.ode.order, self.steps + 1):
-                self.ode.y.append(self.ode.adam_bashforth(i - 1))
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.adam_bashforth(i - 1))
                 self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
                 self.points.append((self.ode.t[i], self.ode.y[i]))
             return self.points
@@ -171,7 +171,7 @@ class Solver:
             self.ode.t = ts
             self.ode.y = ys
             for i in range(self.ode.order, self.steps + 1):
-                self.ode.y.append(self.ode.adam_bashforth(i - 1))
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.adam_bashforth(i - 1))
                 self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
                 self.points.append((self.ode.t[i], self.ode.y[i]))
             return self.points
@@ -182,7 +182,7 @@ class Solver:
             ys.append(self.ode.y)
             ts.append(self.ode.t)
             self.points.append((self.ode.t, self.ode.y))
-            for i in range(self.ode.order):
+            for i in range(self.ode.order - 1):
                 self.ode.y = self.ode.runge_kutta()
                 self.ode.t += self.ode.h
                 ts.append(self.ode.t)
@@ -191,9 +191,8 @@ class Solver:
             self.ode.t = ts
             self.ode.y = ys
             for i in range(self.ode.order, self.steps + 1):
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.adam_bashforth(i - 1))
                 self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
-                self.ode.y.append(self.ode.adam_bashforth(i))
-
                 self.points.append((self.ode.t[i], self.ode.y[i]))
             return self.points
 
