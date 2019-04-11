@@ -106,12 +106,14 @@ class Solver:
             return self.points
 
         elif self.method == "adam_bashforth":
-            for i in range(self.ode.order - 1):
+            for i in range(self.ode.order):
                 self.points.append((self.ode.t[i], self.ode.y[i]))
+
             for i in range(self.ode.order, self.steps + 1):
-                self.ode.y.append(self.ode.adam_bashforth(i - 1))
-                self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.adam_bashforth(i - 1))
+                self.ode.t.append(self.ode.t[i] + self.ode.h)
                 self.points.append((self.ode.t[i], self.ode.y[i]))
+
             return self.points
 
         elif self.method == "adam_bashforth_by_euler":
@@ -224,7 +226,7 @@ if __name__ == "__main__":
 
     # Reading input file
     inFile = open("entrada.txt", "r")
-    outFile = open("saida.txt", "w")
+    # outFile = open("saida.txt", "w")
     lines = inFile.readlines()
 
     for line in lines:
@@ -261,8 +263,9 @@ if __name__ == "__main__":
         calc = Solver(method, steps, problem)
         print(method)
         points = calc.solve()
+        print("step, \tt, \ty")
         for i in range(len(points)):
-            print(i, " ", points[i][1])
+            print(i, " ", points[i])
 
         pyplot.title(method)
         pyplot.xlabel('t')
