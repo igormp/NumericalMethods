@@ -1,4 +1,5 @@
 import sympy
+import matplotlib.pyplot as pyplot
 
 
 class ODE:
@@ -29,22 +30,22 @@ class ODE:
         self.order = order
 
     def euler(self):
-    	return self.y + self.h * self.func(self.t, self.y)
+        return self.y + self.h * self.func(self.t, self.y)
 
     def backward_euler(self):
-	    y1 = euler(self.y, self.t, self.h, self.steps, self.func)
-	    return self.y + self.h * self.func(self.t + self.h, y1)
+        y1 = euler(self.y, self.t, self.h, self.steps, self.func)
+        return self.y + self.h * self.func(self.t + self.h, y1)
 
     def modified_euler(self):
-	    y1 = euler(self.y, self.t, self.h, self.steps, self.func)
-	    return self.y + (self.h / 2) * (self.func(self.t, self.y) + self.func(self.t + self.h, y1))
+        y1 = euler(self.y, self.t, self.h, self.steps, self.func)
+        return self.y + (self.h / 2) * (self.func(self.t, self.y) + self.func(self.t + self.h, y1))
 
     def runge_kutta(self):
-	    k1 = self.func(self.t, self.y)
-	    k2 = self.func(self.t + self.h / 2, self.y + k1 * self.h / 2)
-	    k3 = self.func(self.t + self.h / 2, self.y + k2 * self.h / 2)
-	    k4 = k2 = self.func(self.t + self.h, self.y + k3 * self.h)
-	    return self.y + (k1 + 2 * k2 + 2 * k3 + k4) * self.h / 6
+        k1 = self.func(self.t, self.y)
+        k2 = self.func(self.t + self.h / 2, self.y + k1 * self.h / 2)
+        k3 = self.func(self.t + self.h / 2, self.y + k2 * self.h / 2)
+        k4 = k2 = self.func(self.t + self.h, self.y + k3 * self.h)
+        return self.y + (k1 + 2 * k2 + 2 * k3 + k4) * self.h / 6
 
     def adam_bashforth(self):
         return self.bashforthCoeff[self.order][i] * self.func(self.t, self.y) * self.h
@@ -55,73 +56,70 @@ class ODE:
 
 class Solver:
 
-	x_axis = []
-	y_axis = []
+    def __init__(self, method, steps, ode):
+        self.method = method
+        self.steps = steps
+        self.ode = ode
 
-	def __init__(self, method, steps, ode):
-		self.method = method
-		self.steps = steps
-		self.ode = ode
+    def euler(self):
+        points = []
+        points.append((self.ode.t, self.ode.y))
+        for i in range(self.steps):
+            self.ode.y = self.ode.euler()
+            self.ode.t += self.ode.h
+            points.append((self.ode.t, self.ode.y))
+        return points
 
-	def solve(self)
-		if self.method == "euler":
-			pass
-		elif self.method == "euler_inverso":
-			pass
-		elif self.method == "euler_aprimorado":
-			pass
-		elif self.method == "runge_kutta":
-			pass
-		elif self.method == "adam_bashforth":
-			pass
-		elif self.method == "adam_bashforth_by_euler":
-			pass
-		elif self.method == "adam_bashforth_by_euler_inverso":
-			pass
-		elif self.method == "adam_bashforth_by_euler_aprimorado":
-			pass
-		elif self.method == "adam_bashforth_by_runge_kutta":
-			pass
-		elif self.method == "adam_multon":
-			pass
-		elif self.method == "adam_multon_by_euler":
-			pass
-		elif self.method == "adam_multon_by_euler_inverso":
-			pass
-		elif self.method == "adam_multon_by_euler_aprimorado":
-			pass
-		elif self.method == "adam_multon_by_runge_kutta":
-			pass
-		elif self.method == "formula_inversa":
-			pass
-		elif self.method == "formula_inversa_by_euler":
-			pass
-		elif self.method == "formula_inversa_by_euler_inverso":
-			pass
-		elif self.method == "formula_inversa_by_euler_aprimorado":
-			pass
-		elif self.method == "formula_inversa_by_runge_kutta":
-			pass
-
-		def euler(self):
-			points = []
-			points.append(ode.t, ode.y)
-			for i in range(steps):
-				ode.y = ode.euler
-				points.append(ode.t, )
-				ode.t += h
-				ode.y =
+    def solve(self):
+        if self.method == "euler":
+            return self.euler()
+        elif self.method == "euler_inverso":
+            pass
+        elif self.method == "euler_aprimorado":
+            pass
+        elif self.method == "runge_kutta":
+            pass
+        elif self.method == "adam_bashforth":
+            pass
+        elif self.method == "adam_bashforth_by_euler":
+            pass
+        elif self.method == "adam_bashforth_by_euler_inverso":
+            pass
+        elif self.method == "adam_bashforth_by_euler_aprimorado":
+            pass
+        elif self.method == "adam_bashforth_by_runge_kutta":
+            pass
+        elif self.method == "adam_multon":
+            pass
+        elif self.method == "adam_multon_by_euler":
+            pass
+        elif self.method == "adam_multon_by_euler_inverso":
+            pass
+        elif self.method == "adam_multon_by_euler_aprimorado":
+            pass
+        elif self.method == "adam_multon_by_runge_kutta":
+            pass
+        elif self.method == "formula_inversa":
+            pass
+        elif self.method == "formula_inversa_by_euler":
+            pass
+        elif self.method == "formula_inversa_by_euler_inverso":
+            pass
+        elif self.method == "formula_inversa_by_euler_aprimorado":
+            pass
+        elif self.method == "formula_inversa_by_runge_kutta":
+            pass
 
 
-def main():
+if __name__ == "__main__":
 
-	# Defining equation symbols
-	t, y = sympy.symbols("t y")
+    # Defining equation symbols
+    t, y = sympy.symbols("t y")
 
     # Reading input file
     inFile = open("entrada.txt", "r")
     outFile = open("saida.txt", "w")
-    lines = read.readlines()
+    lines = inFile.readlines()
 
     for line in lines:
         words = line.split()
@@ -132,11 +130,18 @@ def main():
         h = float(words[3])
         steps = int(words[4])
         # Converts the function string into a lambda function
-        f = sympy.lambdify([t,y], sympy.sympify(words[5]), "math")
+        f = sympy.lambdify([t, y], sympy.sympify(words[5]), "math")
         if len(words) > 6:
-        	order = int(words[6])
-        	problem = ODE(y0, t0, h, f, order)
+            order = int(words[6])
+            problem = ODE(y0, t0, h, f, order)
         else:
-        	problem = ODE(y0, t0, h, f)
+            problem = ODE(y0, t0, h, f)
 
         calc = Solver(method, steps, problem)
+
+        points = calc.solve()
+        for i in range(len(points)):
+            print(i, " ", points[i][1])
+
+        pyplot.plot(*zip(*points))
+        pyplot.show()
