@@ -48,7 +48,15 @@ class ODE:
         return self.y + (k1 + 2 * k2 + 2 * k3 + k4) * self.h / 6
 
     def adam_bashforth(self, i):
-        return self.bashforthCoeff[self.order][i] * self.func(self.t, self.y) * self.h
+        t_aux = []
+        y = 0
+        aux = self.order -1
+        for x in range(self.order):
+            t_aux.append(self.t -self.h*aux)
+            aux = aux -1
+        for j in range(self.order):
+            y+= self.bashforthCoeff[self.order-1][j] * self.func(t_aux[i], float(self.y[i])) * self.h
+        return y
 
     def adam_multon(self):
         return self.moultonCoeff[self.order][i] * self.func(self.t, self.y) * self.h
@@ -92,11 +100,11 @@ class Solver:
                 self.points.append((self.ode.t, self.ode.y))
             return self.points
         elif self.method == "adam_bashforth":
-            self.points.append((self.ode.t, self.ode.y))
-            for i in range(self.steps):
-                for j in range(self.order):
-                    y+= self.ode.adam_bashforth(j)
-                self.ode.y = y
+            for i in range(self.ode.order):
+                self.points.append((self.ode.t, self.ode.y[i]))
+                self.ode.t += self.ode.h
+            for i in range(self.ode.order-1, self.steps):
+                self.ode.y = self.ode.adam_bashforth(i)
                 self.ode.t += self.ode.h
                 self.points.append((self.ode.t, self.ode.y))
             return self.points
@@ -144,17 +152,29 @@ if __name__ == "__main__":
         words = line.split()
 
         method = words[0]
-        y0 = float(words[1])
-        t0 = float(words[2])
-        h = float(words[3])
-        steps = int(words[4])
-        # Converts the function string into a lambda function
-        f = sympy.lambdify([t, y], sympy.sympify(words[5]), "math")
-        if len(words) > 6:
-            order = int(words[6])
-            problem = ODE(y0, t0, h, f, order)
+        
+        if len(words) > 7:
+            order = int(words[-1])
+            f = sympy.lambdify([t, y], sympy.sympify(words[-2]), "math")
+            steps = int(words[-3])
+            h = float(words[-4])
+            t0 = float(words[-5])
+            ys = []
+            for i in range(order):
+                ys.append(words[i+1])
+            problem = ODE(ys, t0, h, f, order)
         else:
-            problem = ODE(y0, t0, h, f)
+            y0 = float(words[1])
+            t0 = float(words[2])
+            h = float(words[3])
+            steps = int(words[4])
+            # Converts the function string into a lambda function
+            f = sympy.lambdify([t, y], sympy.sympify(words[5]), "math")
+            if len(words) == 7:
+                order = int(words[6])
+                problem = ODE(y0, t0, h, f, order)
+            elif len(words) < 7:
+                problem = ODE(y0, t0, h, f)
 
         calc = Solver(method, steps, problem)
         print(method)
