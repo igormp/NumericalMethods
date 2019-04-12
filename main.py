@@ -22,6 +22,13 @@ class ODE:
                        [198721 / 60480, -18637 / 2520, 235183 / 20160, -10754 / 945, 135713 / 20160, -5603 / 2520, 19087 / 60480, 0],
                        [16083 / 4480, -1152169 / 120960, 242653 / 13440, -296053 / 13440, 2102243 / 120960, -115747 / 13440, 32863 / 13440, -5257 / 17280]]
 
+    inverse_coeff = [[1, 1, 0, 0, 0, 0, 0],
+                     [2.0 / 3.0, 4.0 / 3.0, -1.0 / 3.0, 0, 0, 0, 0],
+                     [6.0 / 11.0, 18.0 / 11.0, -9.0 / 11.0, 2.0 / 11.0, 0, 0, 0],
+                     [12.0 / 25.0, 48.0 / 25.0, -36.0 / 25.0, 16.0 / 25.0, -3.0 / 25.0, 0, 0],
+                     [60.0 / 137.0, 300.0 / 137.0, -300.0 / 137.0, 200.0 / 137, -75.0 / 137.0, 12.0 / 137.0, 0],
+                     [60.0 / 147.0, 360.0 / 147.0, -450.0 / 147.0, 400.0 / 147.0, -255.0 / 147.0, 72.0 / 147.0, 10.0 / 147.0]]
+
     def __init__(self, y, t, h, func, order=1):
         self.y = y
         self.t = t
@@ -40,12 +47,19 @@ class ODE:
         y1 = self.euler()
         return self.y + (self.h / 2) * (self.func(self.t, self.y) + self.func(self.t + self.h, y1))
 
-    def runge_kutta(self):
-        k1 = self.func(self.t, self.y)
-        k2 = self.func(self.t + self.h / 2, self.y + k1 * self.h / 2)
-        k3 = self.func(self.t + self.h / 2, self.y + k2 * self.h / 2)
-        k4 = self.func(self.t + self.h, self.y + k3 * self.h)
-        return self.y + (k1 + 2 * k2 + 2 * k3 + k4) * self.h / 6
+    def runge_kutta(self, params=None):
+        if params:
+            t = params[0]
+            y = params[1]
+        else:
+            t = self.t
+            y = self.y
+
+        k1 = self.func(t, y)
+        k2 = self.func(t + self.h / 2, y + k1 * self.h / 2)
+        k3 = self.func(t + self.h / 2, y + k2 * self.h / 2)
+        k4 = self.func(t + self.h, y + k3 * self.h)
+        return y + (k1 + 2 * k2 + 2 * k3 + k4) * self.h / 6
 
     def adam_bashforth(self, i):
         fs = []
@@ -60,8 +74,30 @@ class ODE:
         #    y += self.bashforth_coeff[self.order - 1][j] * f * self.h
         return y
 
-    def adam_multon(self):
-        return self.moulton_coeff[self.order][i] * self.func(self.t, self.y) * self.h
+    def adam_multon(self, i):
+        params = (self.t[i], self.y[i])
+        self.y[i] = self.runge_kutta(params)
+        fs = []
+
+        for j in range(self.order):
+            t = self.t[i - j]
+            y = self.y[i - j]
+            fs.append(self.func(t, y))
+
+        y = self.h * sum([(self.moulton_coeff[self.order - 1][j] * fs[j]) for j in range(self.order)])
+        return y
+
+    def inverse(self, i):
+        params = (self.t[i], self.y[i])
+        self.y[i] = self.runge_kutta(params)
+        fs = []
+
+        fs.append(self.h * self.func(self.t[i], self.y[i]))
+        for j in range(self.order):
+            fs.append(self.y[i - j])
+
+        y = sum([a * t for a, t in zip(self.inverse_coeff[self.order - 1], fs)])
+        return y
 
 
 class Solver:
@@ -197,25 +233,186 @@ class Solver:
             return self.points
 
         elif self.method == "adam_multon":
-            pass
+            for i in range(self.ode.order):
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+
+            for i in range(self.ode.order, self.steps + 1):
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.adam_multon(i - 1))
+                self.ode.t.append(self.ode.t[i] + self.ode.h)
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+
+            return self.points
+
         elif self.method == "adam_multon_by_euler":
-            pass
+            ys = []
+            ts = []
+            ys.append(self.ode.y)
+            ts.append(self.ode.t)
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.ode.order - 1):
+                self.ode.y = self.ode.euler()
+                self.ode.t += self.ode.h
+                ts.append(self.ode.t)
+                ys.append(self.ode.y)
+                self.points.append((self.ode.t, self.ode.y))
+            self.ode.t = ts
+            self.ode.y = ys
+            for i in range(self.ode.order, self.steps + 1):
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.adam_multon(i - 1))
+                self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+            return self.points
+
         elif self.method == "adam_multon_by_euler_inverso":
-            pass
+            ys = []
+            ts = []
+            ys.append(self.ode.y)
+            ts.append(self.ode.t)
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.ode.order - 1):
+                self.ode.y = self.ode.backward_euler()
+                self.ode.t += self.ode.h
+                ts.append(self.ode.t)
+                ys.append(self.ode.y)
+                self.points.append((self.ode.t, self.ode.y))
+            self.ode.t = ts
+            self.ode.y = ys
+            for i in range(self.ode.order, self.steps + 1):
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.adam_multon(i - 1))
+                self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+            return self.points
+
         elif self.method == "adam_multon_by_euler_aprimorado":
-            pass
+            ys = []
+            ts = []
+            ys.append(self.ode.y)
+            ts.append(self.ode.t)
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.ode.order - 1):
+                self.ode.y = self.ode.modified_euler()
+                self.ode.t += self.ode.h
+                ts.append(self.ode.t)
+                ys.append(self.ode.y)
+                self.points.append((self.ode.t, self.ode.y))
+            self.ode.t = ts
+            self.ode.y = ys
+            for i in range(self.ode.order, self.steps + 1):
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.adam_multon(i - 1))
+                self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+            return self.points
+
         elif self.method == "adam_multon_by_runge_kutta":
-            pass
+            ys = []
+            ts = []
+            ys.append(self.ode.y)
+            ts.append(self.ode.t)
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.ode.order - 1):
+                self.ode.y = self.ode.runge_kutta()
+                self.ode.t += self.ode.h
+                ts.append(self.ode.t)
+                ys.append(self.ode.y)
+                self.points.append((self.ode.t, self.ode.y))
+            self.ode.t = ts
+            self.ode.y = ys
+            for i in range(self.ode.order, self.steps + 1):
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.adam_multon(i - 1))
+                self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+            return self.points
+
         elif self.method == "formula_inversa":
-            pass
+            for i in range(self.ode.order):
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+
+            for i in range(self.ode.order, self.steps + 1):
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.inverse(i - 1))
+                self.ode.t.append(self.ode.t[i] + self.ode.h)
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+
+            return self.points
+
         elif self.method == "formula_inversa_by_euler":
-            pass
+            ys = []
+            ts = []
+            ys.append(self.ode.y)
+            ts.append(self.ode.t)
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.ode.order - 1):
+                self.ode.y = self.ode.euler()
+                self.ode.t += self.ode.h
+                ts.append(self.ode.t)
+                ys.append(self.ode.y)
+                self.points.append((self.ode.t, self.ode.y))
+            self.ode.t = ts
+            self.ode.y = ys
+            for i in range(self.ode.order, self.steps + 1):
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.inverse(i - 1))
+                self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+            return self.points
+
         elif self.method == "formula_inversa_by_euler_inverso":
-            pass
+            ys = []
+            ts = []
+            ys.append(self.ode.y)
+            ts.append(self.ode.t)
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.ode.order - 1):
+                self.ode.y = self.ode.backward_euler()
+                self.ode.t += self.ode.h
+                ts.append(self.ode.t)
+                ys.append(self.ode.y)
+                self.points.append((self.ode.t, self.ode.y))
+            self.ode.t = ts
+            self.ode.y = ys
+            for i in range(self.ode.order, self.steps + 1):
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.inverse(i - 1))
+                self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+            return self.points
+
         elif self.method == "formula_inversa_by_euler_aprimorado":
-            pass
+            ys = []
+            ts = []
+            ys.append(self.ode.y)
+            ts.append(self.ode.t)
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.ode.order - 1):
+                self.ode.y = self.ode.modified_euler()
+                self.ode.t += self.ode.h
+                ts.append(self.ode.t)
+                ys.append(self.ode.y)
+                self.points.append((self.ode.t, self.ode.y))
+            self.ode.t = ts
+            self.ode.y = ys
+            for i in range(self.ode.order, self.steps + 1):
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.inverse(i - 1))
+                self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+            return self.points
+
         elif self.method == "formula_inversa_by_runge_kutta":
-            pass
+            ys = []
+            ts = []
+            ys.append(self.ode.y)
+            ts.append(self.ode.t)
+            self.points.append((self.ode.t, self.ode.y))
+            for i in range(self.ode.order - 1):
+                self.ode.y = self.ode.runge_kutta()
+                self.ode.t += self.ode.h
+                ts.append(self.ode.t)
+                ys.append(self.ode.y)
+                self.points.append((self.ode.t, self.ode.y))
+            self.ode.t = ts
+            self.ode.y = ys
+            for i in range(self.ode.order, self.steps + 1):
+                self.ode.y.append(self.ode.y[i - 1] + self.ode.inverse(i - 1))
+                self.ode.t.append(self.ode.t[i - 1] + self.ode.h)
+                self.points.append((self.ode.t[i], self.ode.y[i]))
+            return self.points
 
 
 if __name__ == "__main__":
